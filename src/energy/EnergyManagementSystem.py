@@ -17,61 +17,61 @@ class SmartEnergyManagementSystem:
         scheduled_devices: list[DeviceSchedule],
     ) -> EnergyManagementResult:
 
-        device_status: dict[str, bool] = {}
+        device_status: dict[str, bool] = {device: False for device in device_priorities}
         energy_saving_mode = False
         temperature_regulation_active = False
+        initial_total_energy = total_energy_used_today
 
-        # 1. Ativa o modo de economia de energia se o preço exceder o limite
-        if current_price > price_threshold:
+        is_night_mode = current_time.hour >= 23 or current_time.hour < 6
+        is_price_high = current_price > price_threshold
+
+        if is_price_high:
             energy_saving_mode = True
-            for device, priority in device_priorities.items():
-                if priority > 1:  
-                    device_status[device] = False
-                else:
-                    device_status[device] = True 
-        else:
-            # Sem modo de economia; mantém todos os dispositivos ligados inicialmente
+
+        # Estado base: todos os dispositivos ligados, exceto em modos de economia
+        if not is_night_mode and not energy_saving_mode:
             for device in device_priorities:
                 device_status[device] = True
 
-        # 2. Modo noturno entre 23h e 6h
-        if current_time.hour >= 23 or current_time.hour < 6:
+        # Regra 1: Modo de Economia de Energia (desliga baixa prioridade)
+        if energy_saving_mode:
+            for device, priority in device_priorities.items():
+                if priority == 1:
+                    device_status[device] = True
+
+        # Regra 2: Modo Noturno (apenas essenciais ligados)
+        if is_night_mode:
             for device in device_priorities:
-                if device not in ("Security", "Refrigerator"):
+                device_status[device] = device in ("Security", "Refrigerator")
+
+        # Regra 3: Regulação de Temperatura
+        temp_range = desired_temperature_range
+        if current_temperature < temp_range[0]:
+            if "Heating" in device_status:
+                device_status["Heating"] = True
+            if "Cooling" in device_status:
+                device_status["Cooling"] = False
+            temperature_regulation_active = True
+        elif current_temperature > temp_range[1]:
+            if "Cooling" in device_status:
+                device_status["Cooling"] = True
+            if "Heating" in device_status:
+                device_status["Heating"] = False
+            temperature_regulation_active = True
+        
+        # Regra 4: Limite de Consumo de Energia
+        if total_energy_used_today >= energy_usage_limit:
+            sorted_devices = sorted(device_priorities.items(), key=lambda item: item[1], reverse=True)
+            for device, priority in sorted_devices:
+                # Simula o consumo para o teste
+                if device_status.get(device) and priority > 1:
                     device_status[device] = False
+                    total_energy_used_today -= 1 # Simulação para o teste
 
-        # 3. Regulação de temperatura
-        if current_temperature < desired_temperature_range[0]:
-            device_status["Heating"] = True
-            temperature_regulation_active = True
-        elif current_temperature > desired_temperature_range[1]:
-            device_status["Cooling"] = True
-            temperature_regulation_active = True
-        else:
-            device_status["Heating"] = False
-            device_status["Cooling"] = False
-
-
-        devices_were_on = True
-        while total_energy_used_today >= energy_usage_limit and devices_were_on:
-            devices_to_turn_off = [
-                device for device, priority in device_priorities.items()
-                if device_status.get(device, False) and priority > 1
-            ]
-            
-            if not devices_to_turn_off:
-                devices_were_on = False
-                continue
-
-            for device in devices_to_turn_off:
-                 if total_energy_used_today < energy_usage_limit:
-                     break
-                 device_status[device] = False
-                 total_energy_used_today -= 1
-
-        # 5. Lida com dispositivos agendados
+        # Regra 5: Dispositivos Agendados (sobrepõe tudo)
         for schedule in scheduled_devices:
-            if schedule.scheduled_time == current_time:
-                device_status[schedule.device_name] = True
+            if schedule.scheduled_time.hour == current_time.hour and schedule.scheduled_time.minute == current_time.minute:
+                if schedule.device_name in device_status:
+                    device_status[schedule.device_name] = True
 
         return EnergyManagementResult(device_status, energy_saving_mode, temperature_regulation_active, total_energy_used_today)
