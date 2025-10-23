@@ -1,8 +1,8 @@
 import pytest
 from datetime import datetime, timedelta
-from src.fraud.Transaction import Transaction
-from src.fraud.FraudDetectionSystem import FraudDetectionSystem
-from src.fraud.FraudCheckResult import FraudCheckResult
+from fraud.Transaction import Transaction
+from fraud.FraudDetectionSystem import FraudDetectionSystem
+from fraud.FraudCheckResult import FraudCheckResult
 
 class TestFraudDetectionSystem:
     def setup_method(self):

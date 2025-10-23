@@ -1,6 +1,6 @@
 from datetime import datetime
-from src.energy.DeviceSchedule import DeviceSchedule
-from src.energy.EnergyManagementResult import EnergyManagementResult
+from energy.DeviceSchedule import DeviceSchedule
+from energy.EnergyManagementResult import EnergyManagementResult
 
 class SmartEnergyManagementSystem:
     """Um sistema para gerenciar inteligentemente o consumo de energia."""

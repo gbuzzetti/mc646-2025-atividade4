@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, timedelta
-from src.flight.FlightBookingSystem import FlightBookingSystem
-from src.flight.BookingResult import BookingResult
+from flight.FlightBookingSystem import FlightBookingSystem
+from flight.BookingResult import BookingResult
 
 class TestFlightBookingSystem:
     def setup_method(self):
