@@ -1,88 +1,143 @@
+import pytest
 from datetime import datetime
 from src.energy.DeviceSchedule import DeviceSchedule
-from src.energy.EnergyManagementResult import EnergyManagementResult
+from src.energy.EnergyManagementSystem import SmartEnergyManagementSystem
 
-class SmartEnergyManagementSystem:
-    """Um sistema para gerenciar inteligentemente o consumo de energia."""
-    def manage_energy(
-        self,
-        current_price: float,
-        price_threshold: float,
-        device_priorities: dict[str, int],
-        current_time: datetime,
-        current_temperature: float,
-        desired_temperature_range: tuple[float, float],
-        energy_usage_limit: float,
-        total_energy_used_today: float,
-        scheduled_devices: list[DeviceSchedule],
-    ) -> EnergyManagementResult:
+class TestSmartEnergyManagementSystem:
+    def setup_method(self):
+        self.system = SmartEnergyManagementSystem()
 
-        device_status: dict[str, bool] = {device: False for device in device_priorities}
-        
-        # Determina os modos principais
-        energy_saving_mode = current_price > price_threshold
-        is_night_mode = current_time.hour >= 23 or current_time.hour < 6
-        temperature_regulation_active = False
-        
-        # Salva o valor original, pois não devemos modificar o parâmetro de entrada
-        initial_total_energy = total_energy_used_today
+    def test_no_energy_saving_mode(self):
+        result = self.system.manage_energy(
+            current_price=0.15,  # abaixo do limiar
+            price_threshold=0.20,
+            device_priorities={"Heating": 1, "Lights": 2},
+            current_time=datetime(2024, 10, 1, 12, 0, 0),
+            current_temperature=22.0,
+            desired_temperature_range=(20.0, 24.0),
+            energy_usage_limit=30.0,
+            total_energy_used_today=10.0,
+            scheduled_devices=[]
+        )
+        assert result.energy_saving_mode == False
 
-        # --- Lógica de Negócio Corrigida ---
+    def test_scheduled_device_not_yet(self):
+        schedule = DeviceSchedule("Oven", datetime(2024, 10, 1, 18, 0, 0))
+        result = self.system.manage_energy(
+            current_price=0.15,
+            price_threshold=0.20,
+            device_priorities={"Oven": 2},
+            current_time=datetime(2024, 10, 1, 17, 0, 0),  # antes do agendamento
+            current_temperature=22.0,
+            desired_temperature_range=(20.0, 24.0),
+            energy_usage_limit=30.0,
+            total_energy_used_today=25.0,
+            scheduled_devices=[schedule]
+        )
+        assert result.device_status["Oven"] == False
 
-        # 1. Definir Estado Base (Regra 2: Modo Noturno ou Modo Diurno Padrão)
-        if is_night_mode:
-            # Regra 2: Modo Noturno - Apenas essenciais ligados
-            for device in device_status.keys():
-                device_status[device] = device in ("Security", "Refrigerator")
-        else:
-            # Modo Diurno: Padrão é tudo ligado
-            for device in device_status.keys():
-                device_status[device] = True
+    def test_energy_saving_mode(self):
+        # Ativa o modo de economia quando o preço excede o limiar
+        result = self.system.manage_energy(
+            current_price=0.25,
+            price_threshold=0.20,
+            device_priorities={"Heating": 1, "Lights": 2, "Appliances": 3},
+            current_time=datetime(2024, 10, 1, 12, 0, 0),
+            current_temperature=22.0,
+            desired_temperature_range=(20.0, 24.0),
+            energy_usage_limit=30.0,
+            total_energy_used_today=25.0,
+            scheduled_devices=[]
+        )
+        assert result.energy_saving_mode == True
+        # Dispositivos de prioridade 1 devem estar ligados, os outros desligados
+        assert result.device_status["Heating"] == True
+        assert result.device_status["Lights"] == False
+        assert result.device_status["Appliances"] == False
 
-        # 2. Aplicar Overrides de Desligamento (Economia e Limite)
+    def test_night_mode(self):
+        # Modo noturno desliga dispositivos não essenciais
+        result = self.system.manage_energy(
+            current_price=0.15,
+            price_threshold=0.20,
+            device_priorities={"Security": 1, "Refrigerator": 1, "Lights": 2},
+            current_time=datetime(2024, 10, 1, 23, 30, 0),
+            current_temperature=22.0,
+            desired_temperature_range=(20.0, 24.0),
+            energy_usage_limit=30.0,
+            total_energy_used_today=25.0,
+            scheduled_devices=[]
+        )
+        # No modo noturno, apenas Security e Refrigerator permanecem ligados
+        assert result.device_status["Security"] == True
+        assert result.device_status["Refrigerator"] == True
+        assert result.device_status["Lights"] == False
 
-        # Regra 1: Modo de Economia (Aplica-se apenas se NÃO for Modo Noturno)
-        if not is_night_mode and energy_saving_mode:
-            # Desliga dispositivos de baixa prioridade (prioridade > 1)
-            for device, priority in device_priorities.items():
-                if priority > 1:
-                    device_status[device] = False
+    def test_temperature_regulation_heating(self):
+        # Liga o aquecimento se a temperatura estiver abaixo da faixa
+        result = self.system.manage_energy(
+            current_price=0.15,
+            price_threshold=0.20,
+            device_priorities={"Heating": 1, "Cooling": 1},
+            current_time=datetime(2024, 10, 1, 12, 0, 0),
+            current_temperature=18.0,
+            desired_temperature_range=(20.0, 24.0),
+            energy_usage_limit=30.0,
+            total_energy_used_today=25.0,
+            scheduled_devices=[]
+        )
+        assert result.temperature_regulation_active == True
+        assert result.device_status["Heating"] == True
+        assert result.device_status["Cooling"] == False
 
-        # Regra 4: Limite de Consumo de Energia (Sempre verificado)
-        # Desliga progressivamente P > 1.
-        if total_energy_used_today >= energy_usage_limit:
-            # Ordena da menor prioridade (maior número) para a maior (menor número)
-            sorted_devices = sorted(device_priorities.items(), key=lambda item: item[1], reverse=True)
-            
-            for device, priority in sorted_devices:
-                # Desliga apenas dispositivos de baixa prioridade (P > 1)
-                if priority > 1 and device_status.get(device):
-                    device_status[device] = False
+    def test_temperature_regulation_cooling(self):
+        # Liga o resfriamento se a temperatura estiver acima da faixa
+        result = self.system.manage_energy(
+            current_price=0.15,
+            price_threshold=0.20,
+            device_priorities={"Heating": 1, "Cooling": 1},
+            current_time=datetime(2024, 10, 1, 12, 0, 0),
+            current_temperature=25.0,
+            desired_temperature_range=(20.0, 24.0),
+            energy_usage_limit=30.0,
+            total_energy_used_today=25.0,
+            scheduled_devices=[]
+        )
+        assert result.temperature_regulation_active == True
+        assert result.device_status["Heating"] == False
+        assert result.device_status["Cooling"] == True
 
+    def test_energy_limit(self):
+        # Desliga dispositivos de baixa prioridade quando o consumo está alto
+        result = self.system.manage_energy(
+            current_price=0.15,
+            price_threshold=0.20,
+            device_priorities={"Heating": 1, "Lights": 2, "Appliances": 3},
+            current_time=datetime(2024, 10, 1, 12, 0, 0),
+            current_temperature=22.0,
+            desired_temperature_range=(20.0, 24.0),
+            energy_usage_limit=30.0,
+            total_energy_used_today=35.0,  # Excede o limite
+            scheduled_devices=[]
+        )
+        assert result.device_status["Lights"] == False
+        assert result.device_status["Appliances"] == False
+        assert result.device_status["Heating"] == True  # Prioridade 1, não desliga
+        assert result.total_energy_used == 33.0  # 35 - 2
 
-        # 3. Aplicar Overrides de Ligação/Regulação (Temperatura e Agendados)
-
-        # Regra 3: Regulação de Temperatura (Pode ligar dispositivos)
-        temp_range = desired_temperature_range
-        if current_temperature < temp_range[0]:
-            if "Heating" in device_status:
-                device_status["Heating"] = True # Força ligação
-            if "Cooling" in device_status:
-                device_status["Cooling"] = False # Força desligamento
-            temperature_regulation_active = True
-        elif current_temperature > temp_range[1]:
-            if "Cooling" in device_status:
-                device_status["Cooling"] = True # Força ligação
-            if "Heating" in device_status:
-                device_status["Heating"] = False # Força desligamento
-            temperature_regulation_active = True
-        
-        # Regra 5: Dispositivos Agendados (Sobrepõe tudo)
-        # Esta regra deve ser a última, pois ignora todos os outros modos.
-        for schedule in scheduled_devices:
-            if schedule.scheduled_time.hour == current_time.hour and schedule.scheduled_time.minute == current_time.minute:
-                if schedule.device_name in device_status:
-                    device_status[schedule.device_name] = True
-
-        # Retorna o total de energia original, não um valor simulado
-        return EnergyManagementResult(device_status, energy_saving_mode, temperature_regulation_active, initial_total_energy)
+    def test_scheduled_devices(self):
+        # Dispositivos agendados devem ser ligados no horário agendado
+        schedule = DeviceSchedule("Oven", datetime(2024, 10, 1, 12, 0, 0))
+        result = self.system.manage_energy(
+            current_price=0.15,
+            price_threshold=0.20,
+            device_priorities={"Oven": 2},
+            current_time=datetime(2024, 10, 1, 12, 0, 0),
+            current_temperature=22.0,
+            desired_temperature_range=(20.0, 24.0),
+            energy_usage_limit=30.0,
+            total_energy_used_today=25.0,
+            scheduled_devices=[schedule]
+        )
+        # O dispositivo agendado deve estar ligado, mesmo sendo de baixa prioridade
+        assert result.device_status["Oven"] == True
