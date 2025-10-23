@@ -1,7 +1,6 @@
 [project]
 name = "src"
 version = "0.1.0"
-
 dependencies = [
 	"pytest==8.4.2",
 	"staticfg==0.9.5",
@@ -10,9 +9,11 @@ dependencies = [
 ]
 
 [tool.mutmut]
-paths_to_mutate = "src/energy/EnergyManagementSystem.py,src/flight/FlightBookingSystem.py,src/fraud/FraudDetectionSystem.py"
-tests_dir = "tests/"
-runner = "pytest -x"
+paths_to_mutate = [
+    "src/energy/EnergyManagementSystem.py",
+    "src/flight/FlightBookingSystem.py",
+    "src/fraud/FraudDetectionSystem.py",
+]
 
 [tool.setuptools]
 packages = ["src"]
