@@ -1,72 +1,6 @@
-<html><body><h1>src/energy/EnergyManagementSystem.py</h1>Killed 64 out of 80 mutants<h2>Survived</h2>Survived mutation testing. These mutants show holes in your test suite.<h3>Mutant 3</h3><pre>--- src/energy/EnergyManagementSystem.py
+<html><body><h1>src/energy/EnergyManagementSystem.py</h1>Killed 82 out of 85 mutants<h2>Survived</h2>Survived mutation testing. These mutants show holes in your test suite.<h3>Mutant 36</h3><pre>--- src/energy/EnergyManagementSystem.py
 +++ src/energy/EnergyManagementSystem.py
-@@ -21,7 +21,7 @@
-         device_status: dict[str, bool] = {device: False for device in device_priorities}
-         
-         # 2. DEFINIR VARIÁVEIS DE ESTADO
--        energy_saving_mode = current_price > price_threshold
-+        energy_saving_mode = current_price >= price_threshold
-         is_night_mode = current_time.hour >= 23 or current_time.hour < 6
-         limit_exceeded = total_energy_used_today >= energy_usage_limit
-         temperature_regulation_active = False
-</pre><h3>Mutant 7</h3><pre>--- src/energy/EnergyManagementSystem.py
-+++ src/energy/EnergyManagementSystem.py
-@@ -22,7 +22,7 @@
-         
-         # 2. DEFINIR VARIÁVEIS DE ESTADO
-         energy_saving_mode = current_price > price_threshold
--        is_night_mode = current_time.hour >= 23 or current_time.hour < 6
-+        is_night_mode = current_time.hour >= 23 or current_time.hour <= 6
-         limit_exceeded = total_energy_used_today >= energy_usage_limit
-         temperature_regulation_active = False
-         
-</pre><h3>Mutant 8</h3><pre>--- src/energy/EnergyManagementSystem.py
-+++ src/energy/EnergyManagementSystem.py
-@@ -22,7 +22,7 @@
-         
-         # 2. DEFINIR VARIÁVEIS DE ESTADO
-         energy_saving_mode = current_price > price_threshold
--        is_night_mode = current_time.hour >= 23 or current_time.hour < 6
-+        is_night_mode = current_time.hour >= 23 or current_time.hour < 7
-         limit_exceeded = total_energy_used_today >= energy_usage_limit
-         temperature_regulation_active = False
-         
-</pre><h3>Mutant 11</h3><pre>--- src/energy/EnergyManagementSystem.py
-+++ src/energy/EnergyManagementSystem.py
-@@ -23,7 +23,7 @@
-         # 2. DEFINIR VARIÁVEIS DE ESTADO
-         energy_saving_mode = current_price > price_threshold
-         is_night_mode = current_time.hour >= 23 or current_time.hour < 6
--        limit_exceeded = total_energy_used_today >= energy_usage_limit
-+        limit_exceeded = total_energy_used_today > energy_usage_limit
-         temperature_regulation_active = False
-         
-         # Valor de energia simulado que será retornado, conforme o teste espera
-</pre><h3>Mutant 13</h3><pre>--- src/energy/EnergyManagementSystem.py
-+++ src/energy/EnergyManagementSystem.py
-@@ -24,7 +24,7 @@
-         energy_saving_mode = current_price > price_threshold
-         is_night_mode = current_time.hour >= 23 or current_time.hour < 6
-         limit_exceeded = total_energy_used_today >= energy_usage_limit
--        temperature_regulation_active = False
-+        temperature_regulation_active = True
-         
-         # Valor de energia simulado que será retornado, conforme o teste espera
-         simulated_energy_total = total_energy_used_today
-</pre><h3>Mutant 14</h3><pre>--- src/energy/EnergyManagementSystem.py
-+++ src/energy/EnergyManagementSystem.py
-@@ -24,7 +24,7 @@
-         energy_saving_mode = current_price > price_threshold
-         is_night_mode = current_time.hour >= 23 or current_time.hour < 6
-         limit_exceeded = total_energy_used_today >= energy_usage_limit
--        temperature_regulation_active = False
-+        temperature_regulation_active = None
-         
-         # Valor de energia simulado que será retornado, conforme o teste espera
-         simulated_energy_total = total_energy_used_today
-</pre><h3>Mutant 36</h3><pre>--- src/energy/EnergyManagementSystem.py
-+++ src/energy/EnergyManagementSystem.py
-@@ -60,7 +60,7 @@
+@@ -62,7 +62,7 @@
          # Sobrepõe o Modo Diurno ou Modo Economia
          if limit_exceeded:
              # Ordena da menor prioridade (P3) para a maior (P1)
@@ -75,75 +9,9 @@
              
              for device, priority in sorted_devices:
                  # Se o dispositivo estiver LIGADO e for de baixa prioridade
-</pre><h3>Mutant 47</h3><pre>--- src/energy/EnergyManagementSystem.py
-+++ src/energy/EnergyManagementSystem.py
-@@ -72,7 +72,7 @@
-         # REGRA 3: TEMPERATURA (Liga/Desliga Aquecedor/Ar)
-         # Sobrepõe o Limite e o Modo Base
-         temp_range = desired_temperature_range
--        if current_temperature < temp_range[0]:
-+        if current_temperature <= temp_range[0]:
-             if "Heating" in device_status:
-                 device_status["Heating"] = True
-             if "Cooling" in device_status:
-</pre><h3>Mutant 48</h3><pre>--- src/energy/EnergyManagementSystem.py
-+++ src/energy/EnergyManagementSystem.py
-@@ -72,7 +72,7 @@
-         # REGRA 3: TEMPERATURA (Liga/Desliga Aquecedor/Ar)
-         # Sobrepõe o Limite e o Modo Base
-         temp_range = desired_temperature_range
--        if current_temperature < temp_range[0]:
-+        if current_temperature < temp_range[1]:
-             if "Heating" in device_status:
-                 device_status["Heating"] = True
-             if "Cooling" in device_status:
-</pre><h3>Mutant 49</h3><pre>--- src/energy/EnergyManagementSystem.py
-+++ src/energy/EnergyManagementSystem.py
-@@ -73,7 +73,7 @@
-         # Sobrepõe o Limite e o Modo Base
-         temp_range = desired_temperature_range
-         if current_temperature < temp_range[0]:
--            if "Heating" in device_status:
-+            if "XXHeatingXX" in device_status:
-                 device_status["Heating"] = True
-             if "Cooling" in device_status:
-                 device_status["Cooling"] = False
-</pre><h3>Mutant 50</h3><pre>--- src/energy/EnergyManagementSystem.py
-+++ src/energy/EnergyManagementSystem.py
-@@ -73,7 +73,7 @@
-         # Sobrepõe o Limite e o Modo Base
-         temp_range = desired_temperature_range
-         if current_temperature < temp_range[0]:
--            if "Heating" in device_status:
-+            if "Heating" not in device_status:
-                 device_status["Heating"] = True
-             if "Cooling" in device_status:
-                 device_status["Cooling"] = False
-</pre><h3>Mutant 51</h3><pre>--- src/energy/EnergyManagementSystem.py
-+++ src/energy/EnergyManagementSystem.py
-@@ -74,7 +74,7 @@
-         temp_range = desired_temperature_range
-         if current_temperature < temp_range[0]:
-             if "Heating" in device_status:
--                device_status["Heating"] = True
-+                device_status["XXHeatingXX"] = True
-             if "Cooling" in device_status:
-                 device_status["Cooling"] = False
-             temperature_regulation_active = True
-</pre><h3>Mutant 61</h3><pre>--- src/energy/EnergyManagementSystem.py
-+++ src/energy/EnergyManagementSystem.py
-@@ -78,7 +78,7 @@
-             if "Cooling" in device_status:
-                 device_status["Cooling"] = False
-             temperature_regulation_active = True
--        elif current_temperature > temp_range[1]:
-+        elif current_temperature >= temp_range[1]:
-             if "Cooling" in device_status:
-                 device_status["Cooling"] = True
-             if "Heating" in device_status:
 </pre><h3>Mutant 63</h3><pre>--- src/energy/EnergyManagementSystem.py
 +++ src/energy/EnergyManagementSystem.py
-@@ -79,7 +79,7 @@
+@@ -81,7 +81,7 @@
                  device_status["Cooling"] = False
              temperature_regulation_active = True
          elif current_temperature > temp_range[1]:
@@ -154,7 +22,7 @@
                  device_status["Heating"] = False
 </pre><h3>Mutant 64</h3><pre>--- src/energy/EnergyManagementSystem.py
 +++ src/energy/EnergyManagementSystem.py
-@@ -79,7 +79,7 @@
+@@ -81,7 +81,7 @@
                  device_status["Cooling"] = False
              temperature_regulation_active = True
          elif current_temperature > temp_range[1]:
@@ -163,15 +31,4 @@
                  device_status["Cooling"] = True
              if "Heating" in device_status:
                  device_status["Heating"] = False
-</pre><h3>Mutant 65</h3><pre>--- src/energy/EnergyManagementSystem.py
-+++ src/energy/EnergyManagementSystem.py
-@@ -80,7 +80,7 @@
-             temperature_regulation_active = True
-         elif current_temperature > temp_range[1]:
-             if "Cooling" in device_status:
--                device_status["Cooling"] = True
-+                device_status["XXCoolingXX"] = True
-             if "Heating" in device_status:
-                 device_status["Heating"] = False
-             temperature_regulation_active = True
 </pre></body></html>

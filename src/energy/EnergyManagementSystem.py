@@ -50,8 +50,10 @@ class SmartEnergyManagementSystem:
         else:
             # MODO DIURNO NORMAL (Não-Noite, Não-Economia)
             # Liga TUDO, *EXCETO* os dispositivos agendados
+            temperature_devices = {"Heating", "Cooling"}
             for device in device_status.keys():
-                if device not in scheduled_device_names:
+                if device not in scheduled_device_names and\
+                        device not in temperature_devices:
                     device_status[device] = True
         
         # 4. APLICAR OVERRIDES (REGRAS 3, 4, 5)
